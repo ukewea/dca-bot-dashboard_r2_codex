@@ -32,27 +32,37 @@ A lightweight, file-based SPA that visualizes a simulated DCA portfolio by readi
 - Parser notes: NDJSON parser tolerates blank/malformed trailing lines and unknown fields.
 
 ## Deploy to GitHub Pages
-This repo includes a workflow `.github/workflows/deploy.yml`.
+This repo includes a workflow `.github/workflows/deploy.yml` that targets:
+
+- URL: `https://ukewea.github.io/dca-bot-dashboard_r2_codex/`
+- Base path: `/dca-bot-dashboard_r2_codex/`
 
 Steps:
 - Push to `main` (or `master`).
 - In GitHub → Settings → Pages: set Source to “GitHub Actions”.
-- Workflow computes base path:
-  - If repo name ends with `.github.io` → `/`
-  - Otherwise → `/<repo-name>/`
-- Build envs:
-  - `BASE_PATH` → Vite asset base
-  - `VITE_DATA_BASE_PATH` → `${BASE_PATH}data` (so the SPA fetches files under the same subpath)
+- The workflow builds with:
+  - `BASE_PATH=/dca-bot-dashboard_r2_codex/` (Vite asset base)
+  - `VITE_DATA_BASE_PATH=/dca-bot-dashboard_r2_codex/data` (SPA fetch path)
+- It also copies `dist/index.html` to `dist/404.html` for SPA deep-link fallback on Pages.
 
 Result:
-- User/Org site repo: `https://<user>.github.io/`
-- Project repo: `https://<user>.github.io/<repo>/`
+- Site: `https://ukewea.github.io/dca-bot-dashboard_r2_codex/`
 
 ## CI (tests/build)
 - `.github/workflows/ci.yml` builds on pushes/PRs and runs `npm test` if present (`--if-present`).
+
+## Container (optional)
+- Build app: `npm run build`
+- Build image: `docker build -t dca-bot-dashboard .`
+- Run: `docker run -p 8080:80 -v $(pwd)/public/data:/usr/share/nginx/html/data:ro dca-bot-dashboard`
+- Open: `http://localhost:8080/dca-bot-dashboard_r2_codex/` if served behind a subpath proxy, or `/` if served at root.
+
+Notes:
+- `nginx.conf` includes SPA fallback and serves `/data` with no-cache headers.
+- For reverse-proxies, ensure the subpath matches `BASE_PATH` used during build.
 
 ## Troubleshooting
 - Empty UI: verify files exist under `public/data/` and are deployed alongside the app.
 - 404 for `/data/...`: adjust `public/app-config.json` or build with `VITE_DATA_BASE_PATH`.
 - Subpath issues: confirm Pages base path and that `BASE_PATH` was set during build (workflow handles this automatically).
-
+- Consider adding cache/ETag headers on your server for static assets; `/data` is served `no-cache` by the provided NGINX config to avoid stale reads during active trading.

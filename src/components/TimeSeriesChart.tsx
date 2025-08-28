@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { SnapshotLine } from "../types";
+import { downsampleByBuckets } from "../lib/downsample";
 
 type Props = {
   snapshots: SnapshotLine[];
@@ -10,7 +11,7 @@ type Props = {
 
 export function TimeSeriesChart({ snapshots, height = 220, selectedSymbols = [], onRetry }: Props) {
   const series = useMemo(() => {
-    const points = snapshots.map((s) => {
+    let points = snapshots.map((s) => {
       if (selectedSymbols.length === 0) {
         return {
           t: new Date(s.ts).getTime(),
@@ -27,6 +28,7 @@ export function TimeSeriesChart({ snapshots, height = 220, selectedSymbols = [],
         .reduce((acc, p) => acc + Number(p.market_value || 0), 0);
       return { t: new Date(s.ts).getTime(), invested: inv, value: val };
     });
+    points = downsampleByBuckets(points, 1000);
     if (points.length === 0) return { points, min: 0, max: 1 };
     const min = Math.min(...points.map((p) => Math.min(p.invested, p.value)));
     const max = Math.max(...points.map((p) => Math.max(p.invested, p.value)));
