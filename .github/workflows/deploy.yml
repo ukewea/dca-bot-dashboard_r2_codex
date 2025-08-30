@@ -2,7 +2,8 @@ name: Build and Deploy (GitHub Pages)
 
 on:
   push:
-    branches: [ main, master ]
+    branches: 
+      - 'gh-pages'
   workflow_dispatch:
 
 permissions:
